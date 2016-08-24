@@ -300,14 +300,19 @@ OAuth.setProperties(OAuth, // utility functions
             for (var p = 0; p < list.length; ++p) {
                 var parameter = list[p];
                 var name = parameter[0];
+                var value = parameter[1];
+
+                if (typeof value.toString === 'function') {
+                    value = value.toString().trim();
+                }
 
                 // Skip adding params with no value
-                if (!parameter[1] || !parameter[1].trim()) {
+                if (!value) {
                     continue;
                 }
 
                 if (name.indexOf("oauth_") == 0) {
-                    header += ',' + OAuth.percentEncode(name) + '="' + OAuth.percentEncode(parameter[1]) + '"';
+                    header += ',' + OAuth.percentEncode(name) + '="' + OAuth.percentEncode(value) + '"';
                 }
             }
             return header;
