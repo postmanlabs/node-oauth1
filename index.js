@@ -302,20 +302,18 @@ OAuth.setProperties(OAuth, // utility functions
                 var name = parameter[0];
                 var value = parameter[1];
 
+                // Skip adding params with no value
+                if (!value) { continue; }
+
                 if (typeof value.toString === 'function') {
                     value = value.toString().trim();
                 }
 
-                // Skip adding params with no value
-                if (!value) {
-                    continue;
-                }
-
-                if (name.indexOf("oauth_") == 0) {
-                    header += ',' + OAuth.percentEncode(name) + '="' + OAuth.percentEncode(value) + '"';
+                if (name.indexOf('oauth_') == 0) {
+                    header = header + OAuth.percentEncode(name) + '="' + OAuth.percentEncode(value) + '",';
                 }
             }
-            return header;
+            return header.slice(0, -1);  // remove the trailing comma
         }
         ,
         /** Correct the time using a parameter from the URL from which the last script was loaded. */
