@@ -290,10 +290,11 @@ OAuth.setProperties(OAuth, // utility functions
         ,
         /** Construct the value of the Authorization header for an HTTP request. */
         getAuthorizationHeader: function getAuthorizationHeader(realm, parameters) {
-            var header = 'OAuth ';
+            var header = 'OAuth ',
+                headerParams = [];
 
             if (realm && realm.trim()) {
-                header = header + 'realm="' + OAuth.percentEncode(realm) + '",';
+                headerParams.push(['realm', OAuth.percentEncode(realm)].join('='));
             }
 
             var list = OAuth.getParameterList(parameters);
@@ -310,10 +311,10 @@ OAuth.setProperties(OAuth, // utility functions
                 }
 
                 if (name.indexOf('oauth_') == 0) {
-                    header = header + OAuth.percentEncode(name) + '="' + OAuth.percentEncode(value) + '",';
+                    headerParams.push([OAuth.percentEncode(name), OAuth.percentEncode(value)].join('='));
                 }
             }
-            return header.slice(0, -1);  // remove the trailing comma
+            return header + headerParams.join(',');
         }
         ,
         /** Correct the time using a parameter from the URL from which the last script was loaded. */
