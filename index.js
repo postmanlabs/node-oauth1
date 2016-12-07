@@ -293,7 +293,7 @@ OAuth.setProperties(OAuth, // utility functions
             var header = 'OAuth ';
 
             if (realm && realm.trim()) {
-                header = header + 'realm="' + OAuth.percentEncode(realm) + '"';
+                header = header + 'realm="' + OAuth.percentEncode(realm) + '",';
             }
 
             var list = OAuth.getParameterList(parameters);
