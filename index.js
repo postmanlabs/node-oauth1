@@ -294,7 +294,7 @@ OAuth.setProperties(OAuth, // utility functions
                 headerParams = [];
 
             if (realm && realm.trim()) {
-                headerParams.push(['"realm"', '"'+OAuth.percentEncode(realm)+'"'].join('='));
+                headerParams.push(['realm', '"'+OAuth.percentEncode(realm)+'"'].join('='));
             }
 
             var list = OAuth.getParameterList(parameters);
@@ -311,7 +311,7 @@ OAuth.setProperties(OAuth, // utility functions
                 }
 
                 if (name.indexOf('oauth_') == 0) {
-                    headerParams.push(['"'+OAuth.percentEncode(name)+'"', '"'+OAuth.percentEncode(value)+'"'].join('='));
+                    headerParams.push([OAuth.percentEncode(name), '"'+OAuth.percentEncode(value)+'"'].join('='));
                 }
             }
             return header + headerParams.join(',');
