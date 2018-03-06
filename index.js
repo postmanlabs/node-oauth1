@@ -72,9 +72,10 @@
 
  Another option is to call OAuth.correctTimestamp with a Unix timestamp.
  */
-var CryptoJS = require('crypto-js');
+var CryptoJS = require('crypto-js'),
+    OAuth;
+const STRING = 'string';
 
-var OAuth;
 if (OAuth == null) OAuth = {};
 
 OAuth.setProperties = function setProperties(into, from) {
@@ -293,7 +294,7 @@ OAuth.setProperties(OAuth, // utility functions
             var header = 'OAuth ',
                 headerParams = [];
 
-            if (realm && realm.trim()) {
+            if (typeof realm === STRING && realm.trim()) {
                 headerParams.push(['realm', '"'+OAuth.percentEncode(realm)+'"'].join('='));
             }
 
