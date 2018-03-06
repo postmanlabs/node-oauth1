@@ -293,7 +293,7 @@ OAuth.setProperties(OAuth, // utility functions
             var header = 'OAuth ',
                 headerParams = [];
 
-            if (realm && realm.trim()) {
+            if (typeof realm === 'string' && realm.trim()) {
                 headerParams.push(['realm', '"'+OAuth.percentEncode(realm)+'"'].join('='));
             }
 
