@@ -289,16 +289,12 @@ OAuth.setProperties(OAuth, // utility functions
         }
         ,
         /** Construct the value of the Authorization header for an HTTP request. */
-        getAuthorizationHeader: function getAuthorizationHeader(realm, parameters, encodeParams) {
+        getAuthorizationHeader: function getAuthorizationHeader(realm, parameters) {
             var header = 'OAuth ',
                 headerParams = [];
 
-            // encode parameters by default
-            encodeParams === undefined && (encodeParams = true);
-
             if (realm && realm.trim()) {
-                encodeParams && (realm = OAuth.percentEncode(realm));
-                headerParams.push(`realm="${realm}"`);
+                headerParams.push(['realm', '"'+OAuth.percentEncode(realm)+'"'].join('='));
             }
 
             var list = OAuth.getParameterList(parameters);
@@ -314,13 +310,8 @@ OAuth.setProperties(OAuth, // utility functions
                     value = value.toString().trim();
                 }
 
-                if (encodeParams) {
-                    name = OAuth.percentEncode(name);
-                    value = OAuth.percentEncode(value);
-                }
-
                 if (name.indexOf('oauth_') == 0) {
-                    headerParams.push(`${name}="${value}"`);
+                    headerParams.push([OAuth.percentEncode(name), '"'+OAuth.percentEncode(value)+'"'].join('='));
                 }
             }
             return header + headerParams.join(',');
