@@ -22,6 +22,6 @@
   },
   "homepage": "https://github.com/czardoz/node-oauth1#readme",
   "dependencies": {
-    "crypto-js": "3.2.1"
+    "crypto-js": "~3.3.0"
   }
 }
