@@ -21,7 +21,5 @@
     "url": "https://github.com/czardoz/node-oauth1/issues"
   },
   "homepage": "https://github.com/czardoz/node-oauth1#readme",
-  "dependencies": {
-    "crypto-js": "~3.3.0"
-  }
+  "dependencies": {}
 }
