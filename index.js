@@ -72,7 +72,7 @@
 
  Another option is to call OAuth.correctTimestamp with a Unix timestamp.
  */
-var CryptoJS = require('crypto-js');
+var crypto = require('crypto');
 
 var OAuth;
 if (OAuth == null) OAuth = {};
@@ -399,6 +399,11 @@ OAuth.setProperties(OAuth.SignatureMethod.prototype, // instance members
         ,
         /** Set the key string for signing. */
         initialize: function initialize(name, accessor) {
+            if (name.startsWith("RSA")) {
+                this.key = accessor.privateKey;
+                return;
+            }
+
             var consumerSecret;
             if (accessor.accessorSecret != null
                 && name.length > 9
@@ -567,18 +572,42 @@ OAuth.SignatureMethod.registerMethodClass(["PLAINTEXT", "PLAINTEXT-Accessor"],
 OAuth.SignatureMethod.registerMethodClass(["HMAC-SHA1", "HMAC-SHA1-Accessor"],
     OAuth.SignatureMethod.makeSubclass(
         function getSignature(baseString) {
-            b64pad = '=';
-            var signature = CryptoJS.HmacSHA1(baseString, this.key).toString(CryptoJS.enc.Base64);
-            return signature;
+            return crypto.createHmac('sha1', this.key).update(baseString).digest('base64');
         }
     ));
 
 OAuth.SignatureMethod.registerMethodClass(["HMAC-SHA256", "HMAC-SHA256-Accessor"],
     OAuth.SignatureMethod.makeSubclass(
         function getSignature(baseString) {
-            b64pad = '=';
-            var signature = CryptoJS.HmacSHA256(baseString, this.key).toString(CryptoJS.enc.Base64);
-            return signature;
+            return crypto.createHmac('sha256', this.key).update(baseString).digest('base64');
+        }
+    ));
+
+OAuth.SignatureMethod.registerMethodClass(["HMAC-SHA512", "HMAC-SHA512-Accessor"],
+    OAuth.SignatureMethod.makeSubclass(
+        function getSignature(baseString) {
+            return crypto.createHmac('sha512', this.key).update(baseString).digest('base64');
+        }
+    ));
+
+OAuth.SignatureMethod.registerMethodClass(["RSA-SHA1", "RSA-SHA1-Accessor"],
+    OAuth.SignatureMethod.makeSubclass(
+        function getSignature(baseString) {
+            return crypto.createSign('RSA-SHA1').update(baseString).sign(this.key, 'base64');
+        }
+    ));
+
+OAuth.SignatureMethod.registerMethodClass(["RSA-SHA256", "RSA-SHA256-Accessor"],
+    OAuth.SignatureMethod.makeSubclass(
+        function getSignature(baseString) {
+            return crypto.createSign('RSA-SHA256').update(baseString).sign(this.key, 'base64');
+        }
+    ));
+
+OAuth.SignatureMethod.registerMethodClass(["RSA-SHA512", "RSA-SHA512-Accessor"],
+    OAuth.SignatureMethod.makeSubclass(
+        function getSignature(baseString) {
+            return crypto.createSign('RSA-SHA512').update(baseString).sign(this.key, 'base64');
         }
     ));
 
