@@ -441,7 +441,7 @@ OAuth.setProperties(OAuth.SignatureMethod, // class members
                 method.initialize(name, accessor);
                 return method;
             }
-            var err = new Error("signature_method_rejected");
+            var err = new Error("Unsupported signature method");
             var acceptable = "";
             for (var r in OAuth.SignatureMethod.REGISTERED) {
                 if (acceptable != "") acceptable += '&';
