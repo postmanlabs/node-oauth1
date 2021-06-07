@@ -26,7 +26,7 @@
   "dependencies": {},
   "devDependencies": {
     "browserify": "16.5.1",
-    "chai": "4.2.0",
+    "chai": "4.3.4",
     "chalk": "2.4.2",
     "colors": "1.4.0",
     "karma": "3.1.4",
