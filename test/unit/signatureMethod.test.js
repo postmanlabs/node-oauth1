@@ -36,12 +36,56 @@ describe('SignatureMethod.sign()', function () {
         expect(sign(message, accessor)).to.eql(signature);
     });
 
+    it('should generate correct PLAINTEXT-Accessor signature', function () {
+        var message = {
+                action: 'https://postman.com/path',
+                method: 'GET',
+                parameters: {
+                    oauth_signature_method: 'PLAINTEXT-Accessor',
+                    oauth_consumer_key: 'foo',
+                    oauth_token: 'bar',
+                    oauth_nonce: 'baz',
+                    oauth_timestamp: '1588771035',
+                    oauth_version: '1.0'
+                }
+            },
+            accessor = {
+                consumerSecret: 'alpha',
+                accessorSecret: 'delta',
+                tokenSecret: 'beta'
+            },
+            signature = 'delta&beta';
+
+        expect(sign(message, accessor)).to.eql(signature);
+    });
+
     it('should generate correct HMAC-SHA1 signature', function () {
         var message = {
                 action: 'https://postman.com/path',
                 method: 'GET',
                 parameters: {
                     oauth_signature_method: 'HMAC-SHA1',
+                    oauth_consumer_key: 'foo',
+                    oauth_token: 'bar',
+                    oauth_nonce: 'baz',
+                    oauth_timestamp: '1588771035',
+                    oauth_version: '1.0'
+                }
+            },
+            accessor = {
+                consumerSecret: 'alpha',
+                tokenSecret: 'beta'
+            },
+            signature= 'kst31ZZPywC/vi+UVOU93hgdEMg=';
+
+        expect(sign(message, accessor)).to.eql(signature);
+    });
+
+    it('should default to HMAC-SHA1 when method not provided', function () {
+        var message = {
+                action: 'https://postman.com/path',
+                method: 'GET',
+                parameters: {
                     oauth_consumer_key: 'foo',
                     oauth_token: 'bar',
                     oauth_nonce: 'baz',

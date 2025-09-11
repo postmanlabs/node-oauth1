@@ -74,4 +74,34 @@ describe('getAuthorizationHeader()', function () {
         
         expect(getAuthHeader(realm, params)).to.not.include('random');
     });
+
+    it('should trim values using toString() and then include', function () {
+        var params = {
+                oauth_signature_method: 'PLAINTEXT',
+                oauth_consumer_key: 'foo',
+                oauth_token: { toString: function () { return ' bar '; } },
+                oauth_nonce: 'baz',
+                oauth_timestamp: '1588771035',
+                oauth_version: '1.0',
+                oauth_signature: 'sig=='
+            },
+            header = getAuthHeader(null, params);
+
+        expect(header).to.include('oauth_token="bar"');
+    });
+
+    it('should skip params with empty string values', function () {
+        var params = {
+                oauth_signature_method: 'PLAINTEXT',
+                oauth_consumer_key: 'foo',
+                oauth_token: '',
+                oauth_nonce: 'baz',
+                oauth_timestamp: '1588771035',
+                oauth_version: '1.0',
+                oauth_signature: 'sig=='
+            },
+            header = getAuthHeader(null, params);
+
+        expect(header).to.not.include('oauth_token');
+    });
 });
