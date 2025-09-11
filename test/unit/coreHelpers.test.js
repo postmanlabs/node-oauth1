@@ -281,6 +281,18 @@ describe('Core helpers', function () {
             expect(params.oauth_consumer_key).to.equal('');
             expect(params.oauth_token).to.equal(undefined);
         });
+
+        it('should not override provided oauth_version', async function () {
+            OAuth.timestamp = function () { return '1588771035'; };
+            OAuth.nonce = function () { return 'baz'; };
+            var message = {
+                action: 'https://postman.com/path',
+                method: 'GET',
+                parameters: { oauth_version: '1.0' }
+            };
+            await OAuth.completeRequest(message, { consumerKey: 'foo', token: 'bar', consumerSecret: 'alpha', tokenSecret: 'beta' });
+            expect(message.parameters.oauth_version).to.equal('1.0');
+        });
     });
 
     describe('declareClass property merge', function () {
@@ -362,6 +374,14 @@ describe('Core helpers', function () {
             OAuth.correctTimestampFromSrc();
 
             global.document = { getElementsByTagName: function () { return [{ src: 'http://example.com/file.js?x=1' }]; } };
+            OAuth.correctTimestampFromSrc();
+        });
+
+        it('should early-return when scripts list is null/empty', function () {
+            global.document = { getElementsByTagName: function () { return null; } };
+            OAuth.correctTimestampFromSrc();
+
+            global.document = { getElementsByTagName: function () { return []; } };
             OAuth.correctTimestampFromSrc();
         });
     });

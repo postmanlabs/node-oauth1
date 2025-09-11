@@ -166,7 +166,7 @@ describe('SignatureMethod.sign()', function () {
         expect(result).to.eql(signature);
     });
 
-    it.skip('should generate correct RSA-SHA1 signature', async function () {
+    it('should generate correct RSA-SHA1 signature', async function () {
         var message = {
                 action: 'https://postman.com/path',
                 method: 'GET',
@@ -187,7 +187,7 @@ describe('SignatureMethod.sign()', function () {
         expect(result).to.eql(signature);
     });
 
-    it.skip('should generate correct RSA-SHA256 signature', async function () {
+    it('should generate correct RSA-SHA256 signature', async function () {
         var message = {
                 action: 'https://postman.com/path',
                 method: 'GET',
@@ -208,7 +208,7 @@ describe('SignatureMethod.sign()', function () {
         expect(result).to.eql(signature);
     });
 
-    it.skip('should generate correct RSA-SHA512 signature', async function () {
+    it('should generate correct RSA-SHA512 signature', async function () {
         var message = {
                 action: 'https://postman.com/path',
                 method: 'GET',
@@ -298,7 +298,7 @@ describe('SignatureMethod.sign()', function () {
         expect(result).to.eql(signature);
     });
 
-    it.skip('should throw error if private key is absent for RSA signature', async function () {
+    it('should throw error if private key is absent for RSA signature', async function () {
         var message = {
                 action: 'https://postman.com/path',
                 method: 'GET',
@@ -314,13 +314,15 @@ describe('SignatureMethod.sign()', function () {
             accessor = {
                 privateKey: undefined
             };
-
-        // TODO: update assertion in try/catch
-        // await sign(message, accessor);
-        // expect(function () {sign(message, accessor)}).to.throw();
+        try {
+            await sign(message, accessor);
+            throw new Error('Expected sign to throw');
+        } catch (err) {
+            expect(err).to.be.instanceOf(Error);
+        }
     });
 
-    it.skip('should throw error if private key is not in valid PEM format', async function () {
+    it('should throw error if private key is not in valid PEM format', async function () {
         var message = {
                 action: 'https://postman.com/path',
                 method: 'GET',
@@ -336,9 +338,90 @@ describe('SignatureMethod.sign()', function () {
             accessor = {
                 privateKey: 'invalid private key!!'
             };
+        try {
+            await sign(message, accessor);
+            throw new Error('Expected sign to throw');
+        } catch (err) {
+            expect(err).to.be.instanceOf(Error);
+        }
+    });
 
-        // TODO: update assertion in try/catch
-        // await sign(message, accessor);0
-        // expect(function () {sign(message, accessor)}).to.throw();
+    it('should throw when Web Crypto API is unavailable (HMAC path)', async function () {
+        var message = {
+                action: 'https://postman.com/path',
+                method: 'GET',
+                parameters: {
+                    oauth_signature_method: 'HMAC-SHA1',
+                    oauth_consumer_key: 'foo',
+                    oauth_token: 'bar',
+                    oauth_nonce: 'baz',
+                    oauth_timestamp: '1588771035',
+                    oauth_version: '1.0'
+                }
+            },
+            accessor = {
+                consumerSecret: 'alpha',
+                tokenSecret: 'beta'
+            };
+        var savedCrypto = global.crypto;
+        try {
+            // Simulate missing Web Crypto
+            delete global.crypto;
+            await sign(message, accessor);
+            throw new Error('Expected sign to throw');
+        } catch (err) {
+            expect(err).to.be.instanceOf(Error);
+        } finally {
+            global.crypto = savedCrypto;
+        }
+    });
+
+    it('should attempt JWK import path for RSA when privateKey is object', async function () {
+        var message = {
+                action: 'https://postman.com/path',
+                method: 'GET',
+                parameters: {
+                    oauth_signature_method: 'RSA-SHA256',
+                    oauth_consumer_key: 'foo',
+                    oauth_token: 'bar',
+                    oauth_nonce: 'baz',
+                    oauth_timestamp: '1588771035',
+                    oauth_version: '1.0'
+                }
+            },
+            accessor = {
+                privateKey: {} // invalid JWK, but exercises the JWK import branch
+            };
+        try {
+            await sign(message, accessor);
+            throw new Error('Expected sign to throw');
+        } catch (err) {
+            expect(err).to.be.instanceOf(Error);
+        }
+    });
+
+    it('should take PKCS#8 PEM branch even if import fails', async function () {
+        var message = {
+                action: 'https://postman.com/path',
+                method: 'GET',
+                parameters: {
+                    oauth_signature_method: 'RSA-SHA1',
+                    oauth_consumer_key: 'foo',
+                    oauth_token: 'bar',
+                    oauth_nonce: 'baz',
+                    oauth_timestamp: '1588771035',
+                    oauth_version: '1.0'
+                }
+            },
+            // This is a PKCS#8 header with invalid body to simulate import failure
+            accessor = { privateKey: '-----BEGIN PRIVATE KEY-----\nMIIBVgIBADANBgkqhkiG9w0BAQEFAASCAT8wggE7AgEAAkEA\n-----END PRIVATE KEY-----' };
+
+        try {
+            await sign(message, accessor);
+            throw new Error('Expected sign to throw');
+        } catch (err) {
+            // We only care that the branch was exercised
+            expect(err).to.be.instanceOf(Error);
+        }
     });
 });

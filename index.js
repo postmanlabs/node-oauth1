@@ -130,15 +130,72 @@ async function rsaPkcs1SignBase64(hashAlg, privateKey, dataStr) {
     var key;
     if (typeof privateKey === 'string') {
         var info = pemToDer(privateKey);
-        if (info.type !== 'PRIVATE KEY') {
-            throw new Error('Provide PKCS#8 PEM (-----BEGIN PRIVATE KEY-----) or JWK');
+        var pkcs8Der;
+        if (info.type === 'PRIVATE KEY') {
+            pkcs8Der = info.der;
+        } else if (info.type === 'RSA PRIVATE KEY') {
+            pkcs8Der = pkcs1ToPkcs8(info.der);
+        } else {
+            throw new Error('Provide PKCS#8 PEM (-----BEGIN PRIVATE KEY-----), PKCS#1 PEM (-----BEGIN RSA PRIVATE KEY-----) or JWK');
         }
-        key = await globalThis.crypto.subtle.importKey('pkcs8', info.der, normalized, false, ['sign']);
+        key = await globalThis.crypto.subtle.importKey('pkcs8', pkcs8Der, normalized, false, ['sign']);
     } else {
         key = await globalThis.crypto.subtle.importKey('jwk', privateKey, normalized, false, ['sign']);
     }
     var sig = await globalThis.crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, encodeUtf8(String(dataStr)));
     return arrayBufferToBase64(sig);
+}
+
+// Minimal DER helpers to wrap RSAPrivateKey (PKCS#1) into PKCS#8 PrivateKeyInfo
+function derEncodeLength(length) {
+    if (length < 128) {
+        return new Uint8Array([length]);
+    }
+    var octets = [];
+    var value = length;
+    while (value > 0) {
+        octets.unshift(value & 0xff);
+        value = value >>> 8;
+    }
+    var result = new Uint8Array(1 + octets.length);
+    result[0] = 0x80 | octets.length;
+    for (var i = 0; i < octets.length; i++) {
+        result[1 + i] = octets[i];
+    }
+    return result;
+}
+
+function concatUint8Arrays() {
+    var totalLength = 0;
+    for (var i = 0; i < arguments.length; i++) {
+        totalLength += arguments[i].length;
+    }
+    var out = new Uint8Array(totalLength);
+    var offset = 0;
+    for (var j = 0; j < arguments.length; j++) {
+        out.set(arguments[j], offset);
+        offset += arguments[j].length;
+    }
+    return out;
+}
+
+function derEncodeTag(tag, content) {
+    return concatUint8Arrays(new Uint8Array([tag]), derEncodeLength(content.length), content);
+}
+
+function pkcs1ToPkcs8(pkcs1DerBuffer) {
+    var pkcs1 = new Uint8Array(pkcs1DerBuffer);
+    // version: INTEGER 0
+    var version = new Uint8Array([0x02, 0x01, 0x00]);
+    // AlgorithmIdentifier: rsaEncryption OID with NULL params
+    var oidRsaEncryption = new Uint8Array([0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01]);
+    var nullParams = new Uint8Array([0x05, 0x00]);
+    var algId = derEncodeTag(0x30, concatUint8Arrays(oidRsaEncryption, nullParams));
+    // privateKey: OCTET STRING wrapping RSAPrivateKey DER
+    var privateKeyOctet = derEncodeTag(0x04, pkcs1);
+    var seqContent = concatUint8Arrays(version, algId, privateKeyOctet);
+    var pkcs8 = derEncodeTag(0x30, seqContent);
+    return pkcs8.buffer;
 }
 
 var OAuth;
