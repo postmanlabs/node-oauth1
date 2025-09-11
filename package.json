@@ -8,6 +8,10 @@
     "test-unit": "node npm/test-unit.js",
     "test-browser": "node npm/test-browser.js"
   },
+  "files": [
+    "index.js",
+    "browser.js"
+  ],
   "exports": {
     "browser": "./browser.js",
     "node": "./index.js",
