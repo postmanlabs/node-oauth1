@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/czardoz/node-oauth1.git"
+    "url": "git+https://github.com/postmanlabs/node-oauth1.git"
   },
   "keywords": [
     "OAuth",
@@ -20,9 +20,9 @@
   "author": "",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/czardoz/node-oauth1/issues"
+    "url": "https://github.com/postmanlabs/node-oauth1/issues"
   },
-  "homepage": "https://github.com/czardoz/node-oauth1#readme",
+  "homepage": "https://github.com/postmanlabs/node-oauth1#readme",
   "dependencies": {},
   "devDependencies": {
     "browserify": "16.5.1",
