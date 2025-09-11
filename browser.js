@@ -1,5 +1,3 @@
-/* jshint ignore:start */
-
 /*
  * Copyright 2008 Netflix, Inc.
  *
@@ -15,64 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/* Here's some JavaScript software for implementing OAuth.
-
- This isn't as useful as you might hope.  OAuth is based around
- allowing tools and websites to talk to each other.  However,
- JavaScript running in web browsers is hampered by security
- restrictions that prevent code running on one website from
- accessing data stored or served on another.
-
- Before you start hacking, make sure you understand the limitations
- posed by cross-domain XMLHttpRequest.
-
- On the bright side, some platforms use JavaScript as their
- language, but enable the programmer to access other web sites.
- Examples include Google Gadgets, and Microsoft Vista Sidebar.
- For those platforms, this library should come in handy.
- */
-
-// The HMAC-SHA1 signature method calls b64_hmac_sha1, defined by
-// http://pajhome.org.uk/crypt/md5/sha1.js
-
-/* An OAuth message is represented as an object like this:
- {method: "GET", action: "http://server.com/path", parameters: ...}
-
- The parameters may be either a map {name: value, name2: value2}
- or an Array of name-value pairs [[name, value], [name2, value2]].
- The latter representation is more powerful: it supports parameters
- in a specific sequence, or several parameters with the same name;
- for example [["a", 1], ["b", 2], ["a", 3]].
-
- Parameter names and values are NOT percent-encoded in an object.
- They must be encoded before transmission and decoded after reception.
- For example, this message object:
- {method: "GET", action: "http://server/path", parameters: {p: "x y"}}
- ... can be transmitted as an HTTP request that begins:
- GET /path?p=x%20y HTTP/1.0
- (This isn't a valid OAuth request, since it lacks a signature etc.)
- Note that the object "x y" is transmitted as x%20y.  To encode
- parameters, you can call OAuth.addToURL, OAuth.formEncode or
- OAuth.getAuthorization.
-
- This message object model harmonizes with the browser object model for
- input elements of an form, whose value property isn't percent encoded.
- The browser encodes each value before transmitting it. For example,
- see consumer.setInputs in example/consumer.js.
- */
-
-/* This script needs to know what time it is. By default, it uses the local
- clock (new Date), which is apt to be inaccurate in browsers. To do
- better, you can load this script from a URL whose query string contains
- an oauth_timestamp parameter, whose value is a current Unix timestamp.
- For example, when generating the enclosing document using PHP:
-
- <script src="oauth.js?oauth_timestamp=<?=time()?>" ...
-
- Another option is to call OAuth.correctTimestamp with a Unix timestamp.
- */
-// Web Crypto helpers (async) replacing node:crypto
 var encodeUtf8 = (function () {
     if (typeof TextEncoder !== 'undefined') {
         var te = new TextEncoder();
@@ -742,5 +682,3 @@ try {
 
 
 module.exports = OAuth;
-
-/* jshint ignore:end */
