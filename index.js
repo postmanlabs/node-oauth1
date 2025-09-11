@@ -72,7 +72,74 @@
 
  Another option is to call OAuth.correctTimestamp with a Unix timestamp.
  */
-var crypto = require('crypto');
+// Web Crypto helpers (async) replacing node:crypto
+var encodeUtf8 = (function () {
+    if (typeof TextEncoder !== 'undefined') {
+        var te = new TextEncoder();
+        return function (str) { return te.encode(str); };
+    }
+    if (typeof Buffer !== 'undefined' && Buffer.from) {
+        return function (str) {
+            return Buffer.from(str, 'utf8');
+        };
+    }
+    throw new Error('No UTF-8 encoder available. Provide TextEncoder or Buffer.from');
+})();
+
+function arrayBufferToBase64(buffer) {
+    if (typeof Buffer !== 'undefined' && Buffer.from) {
+        return Buffer.from(buffer).toString('base64');
+    }
+    var binary = '';
+    var bytes = new Uint8Array(buffer);
+    for (var i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+}
+
+async function hmacSignBase64(hashAlg, keyStr, dataStr) {
+    if (!globalThis.crypto || !globalThis.crypto.subtle) {
+        throw new Error('Web Crypto API is required (globalThis.crypto.subtle)');
+    }
+    var keyData = encodeUtf8(keyStr == null ? '' : String(keyStr));
+    var cryptoKey = await globalThis.crypto.subtle.importKey(
+        'raw',
+        keyData,
+        { name: 'HMAC', hash: { name: hashAlg } },
+        false,
+        ['sign']
+    );
+    var sig = await globalThis.crypto.subtle.sign('HMAC', cryptoKey, encodeUtf8(String(dataStr)));
+    return arrayBufferToBase64(sig);
+}
+
+function pemToDer(pem) {
+    var m = /-----BEGIN ([A-Z ]+)-----([\s\S]*?)-----END \1-----/m.exec(pem);
+    if (!m) throw new Error('Invalid PEM');
+    var b64 = m[2].replace(/[\r\n\s]/g, '');
+    var raw = (typeof Buffer !== 'undefined') ? Buffer.from(b64, 'base64') : Uint8Array.from(atob(b64), function (c) { return c.charCodeAt(0); });
+    var der = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
+    return { type: m[1], der: der };
+}
+
+async function rsaPkcs1SignBase64(hashAlg, privateKey, dataStr) {
+    if (!globalThis.crypto || !globalThis.crypto.subtle) {
+        throw new Error('Web Crypto API is required (globalThis.crypto.subtle)');
+    }
+    
+    var normalized = { name: 'RSASSA-PKCS1-v1_5', hash: { name: hashAlg } };
+    var key;
+    if (typeof privateKey === 'string') {
+        var info = pemToDer(privateKey);
+        if (info.type !== 'PRIVATE KEY') {
+            throw new Error('Provide PKCS#8 PEM (-----BEGIN PRIVATE KEY-----) or JWK');
+        }
+        key = await globalThis.crypto.subtle.importKey('pkcs8', info.der, normalized, false, ['sign']);
+    } else {
+        key = await globalThis.crypto.subtle.importKey('jwk', privateKey, normalized, false, ['sign']);
+    }
+    var sig = await globalThis.crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, encodeUtf8(String(dataStr)));
+    return arrayBufferToBase64(sig);
+}
 
 var OAuth;
 if (OAuth == null) OAuth = {};
@@ -246,7 +313,7 @@ OAuth.setProperties(OAuth, // utility functions
          {consumerKey:'foo', consumerSecret:'bar', accessorSecret:'nurn', token:'krelm', tokenSecret:'blah'}
          The accessorSecret property is optional.
          */
-        completeRequest: function completeRequest(message, accessor) {
+        completeRequest: async function completeRequest(message, accessor) {
             if (message.method == null) {
                 message.method = "GET";
             }
@@ -266,7 +333,7 @@ OAuth.setProperties(OAuth, // utility functions
             if (map.oauth_nonce == null) {
                 OAuth.setParameter(message, "oauth_nonce", OAuth.nonce(6));
             }
-            OAuth.SignatureMethod.sign(message, accessor);
+            await OAuth.SignatureMethod.sign(message, accessor);
         }
         ,
         setTimestampAndNonce: function setTimestampAndNonce(message) {
@@ -390,9 +457,9 @@ OAuth.declareClass(OAuth, "SignatureMethod", function OAuthSignatureMethod() {
 OAuth.setProperties(OAuth.SignatureMethod.prototype, // instance members
     {
         /** Add a signature to the message. */
-        sign: function sign(message) {
+        sign: async function sign(message) {
             var baseString = OAuth.SignatureMethod.getBaseString(message);
-            var signature = this.getSignature(baseString);
+            var signature = await this.getSignature(baseString);
             OAuth.setParameter(message, "oauth_signature", signature);
             return signature; // just in case someone's interested
         }
@@ -424,7 +491,7 @@ OAuth.setProperties(OAuth.SignatureMethod.prototype, // instance members
 // Class members:
 OAuth.setProperties(OAuth.SignatureMethod, // class members
     {
-        sign: function sign(message, accessor) {
+        sign: async function sign(message, accessor) {
             var name = OAuth.getParameterMap(message.parameters).oauth_signature_method;
             if (name == null || name == "") {
                 name = "HMAC-SHA1";
@@ -572,42 +639,42 @@ OAuth.SignatureMethod.registerMethodClass(["PLAINTEXT", "PLAINTEXT-Accessor"],
 OAuth.SignatureMethod.registerMethodClass(["HMAC-SHA1", "HMAC-SHA1-Accessor"],
     OAuth.SignatureMethod.makeSubclass(
         function getSignature(baseString) {
-            return crypto.createHmac('sha1', this.key).update(baseString).digest('base64');
+            return hmacSignBase64('SHA-1', this.key, baseString);
         }
     ));
 
 OAuth.SignatureMethod.registerMethodClass(["HMAC-SHA256", "HMAC-SHA256-Accessor"],
     OAuth.SignatureMethod.makeSubclass(
         function getSignature(baseString) {
-            return crypto.createHmac('sha256', this.key).update(baseString).digest('base64');
+            return hmacSignBase64('SHA-256', this.key, baseString);
         }
     ));
 
 OAuth.SignatureMethod.registerMethodClass(["HMAC-SHA512", "HMAC-SHA512-Accessor"],
     OAuth.SignatureMethod.makeSubclass(
         function getSignature(baseString) {
-            return crypto.createHmac('sha512', this.key).update(baseString).digest('base64');
+            return hmacSignBase64('SHA-512', this.key, baseString);
         }
     ));
 
 OAuth.SignatureMethod.registerMethodClass(["RSA-SHA1", "RSA-SHA1-Accessor"],
     OAuth.SignatureMethod.makeSubclass(
         function getSignature(baseString) {
-            return crypto.createSign('RSA-SHA1').update(baseString).sign(this.key, 'base64');
+            return rsaPkcs1SignBase64('SHA-1', this.key, baseString);
         }
     ));
 
 OAuth.SignatureMethod.registerMethodClass(["RSA-SHA256", "RSA-SHA256-Accessor"],
     OAuth.SignatureMethod.makeSubclass(
         function getSignature(baseString) {
-            return crypto.createSign('RSA-SHA256').update(baseString).sign(this.key, 'base64');
+            return rsaPkcs1SignBase64('SHA-256', this.key, baseString);
         }
     ));
 
 OAuth.SignatureMethod.registerMethodClass(["RSA-SHA512", "RSA-SHA512-Accessor"],
     OAuth.SignatureMethod.makeSubclass(
         function getSignature(baseString) {
-            return crypto.createSign('RSA-SHA512').update(baseString).sign(this.key, 'base64');
+            return rsaPkcs1SignBase64('SHA-512', this.key, baseString);
         }
     ));
 

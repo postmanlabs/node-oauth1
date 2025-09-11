@@ -1,6 +1,14 @@
 var expect = require('chai').expect,
     OAuth = require('../../index');
 
+// Web Crypto polyfill for Node test environment
+try {
+    var nodeCrypto = require('crypto');
+    if (!global.crypto || !global.crypto.subtle) {
+        global.crypto = nodeCrypto.webcrypto;
+    }
+} catch (e) {}
+
 describe('Core helpers', function () {
     describe('percentEncode / decodePercent', function () {
         it('should percent-encode special characters per OAuth spec', function () {
@@ -196,7 +204,7 @@ describe('Core helpers', function () {
             OAuth.nonce = origNonce;
         });
 
-        it('should populate defaults and sign with HMAC-SHA1 by default', function () {
+        it('should populate defaults and sign with HMAC-SHA1 by default', async function () {
             OAuth.timestamp = function () { return '1588771035'; };
             OAuth.nonce = function () { return 'baz'; };
 
@@ -207,7 +215,7 @@ describe('Core helpers', function () {
             };
             var accessor = { consumerSecret: 'alpha', tokenSecret: 'beta' };
 
-            OAuth.completeRequest(message, accessor);
+            await OAuth.completeRequest(message, accessor);
 
             // should have added these
             expect(message.parameters.oauth_version).to.equal('1.0');
@@ -227,11 +235,11 @@ describe('Core helpers', function () {
             expect(message.parameters.oauth_nonce).to.equal('abc');
         });
 
-        it('should not override provided timestamp/nonce', function () {
+        it('should not override provided timestamp/nonce', async function () {
             OAuth.timestamp = function () { return 'X'; };
             OAuth.nonce = function () { return 'Y'; };
             var message = { method: undefined, action: 'https://postman.com/path', parameters: { oauth_timestamp: '1', oauth_nonce: 'n', oauth_consumer_key: 'foo', oauth_token: 'bar' } };
-            OAuth.completeRequest(message, { consumerSecret: 'alpha', tokenSecret: 'beta' });
+            await OAuth.completeRequest(message, { consumerSecret: 'alpha', tokenSecret: 'beta' });
             expect(message.parameters.oauth_timestamp).to.equal('1');
             expect(message.parameters.oauth_nonce).to.equal('n');
         });
@@ -246,7 +254,7 @@ describe('Core helpers', function () {
             expect(params.oauth_nonce).to.equal('z');
         });
 
-        it('should set consumer key and token from accessor when missing', function () {
+        it('should set consumer key and token from accessor when missing', async function () {
             OAuth.timestamp = function () { return '1588771035'; };
             OAuth.nonce = function () { return 'baz'; };
             var message = {
@@ -254,13 +262,13 @@ describe('Core helpers', function () {
                 method: 'GET',
                 parameters: { }
             };
-            OAuth.completeRequest(message, { consumerKey: 'foo', token: 'bar', consumerSecret: 'alpha', tokenSecret: 'beta' });
+            await OAuth.completeRequest(message, { consumerKey: 'foo', token: 'bar', consumerSecret: 'alpha', tokenSecret: 'beta' });
             var params = OAuth.getParameterMap(message.parameters);
             expect(params.oauth_consumer_key).to.equal('foo');
             expect(params.oauth_token).to.equal('bar');
         });
 
-        it('should default oauth_consumer_key to empty string if absent', function () {
+        it('should default oauth_consumer_key to empty string if absent', async function () {
             OAuth.timestamp = function () { return '1588771035'; };
             OAuth.nonce = function () { return 'baz'; };
             var message = {
@@ -268,7 +276,7 @@ describe('Core helpers', function () {
                 method: 'GET',
                 parameters: { }
             };
-            OAuth.completeRequest(message, { consumerSecret: 'alpha', tokenSecret: 'beta' });
+            await OAuth.completeRequest(message, { consumerSecret: 'alpha', tokenSecret: 'beta' });
             var params = OAuth.getParameterMap(message.parameters);
             expect(params.oauth_consumer_key).to.equal('');
             expect(params.oauth_token).to.equal(undefined);
