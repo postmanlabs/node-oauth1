@@ -1,5 +1,5 @@
 coverage:
-  range: 40..100         # green if 100+, red if 70-
+  range: 90..100         # green if 100+, red if 70-
 
   status:
     patch:
@@ -16,8 +16,8 @@ coverage:
 
       # coverage status for unit tests
       unit:
-        flags: unit
-        target: 40
+        flags: [unit]
+        target: 90
 
 parsers:
   javascript:

@@ -1,6 +1,6 @@
 {
-  "name": "node-oauth1",
-  "version": "1.3.0",
+  "name": "@postman/node-oauth1",
+  "version": "1.4.0",
   "description": "A fork of Netflix's implementation of the OAuth1 protocol",
   "main": "index.js",
   "scripts": {
@@ -8,9 +8,18 @@
     "test-unit": "node npm/test-unit.js",
     "test-browser": "node npm/test-browser.js"
   },
+  "files": [
+    "index.js",
+    "browser.js"
+  ],
+  "exports": {
+    "browser": "./browser.js",
+    "node": "./index.js",
+    "default": "./index.js"
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/czardoz/node-oauth1.git"
+    "url": "git+https://github.com/postmanlabs/node-oauth1.git"
   },
   "keywords": [
     "OAuth",
@@ -20,9 +29,9 @@
   "author": "",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/czardoz/node-oauth1/issues"
+    "url": "https://github.com/postmanlabs/node-oauth1/issues"
   },
-  "homepage": "https://github.com/czardoz/node-oauth1#readme",
+  "homepage": "https://github.com/postmanlabs/node-oauth1#readme",
   "dependencies": {},
   "devDependencies": {
     "browserify": "16.5.1",
