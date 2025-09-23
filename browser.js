@@ -13,18 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var encodeUtf8 = (function () {
-    if (typeof TextEncoder !== 'undefined') {
-        var te = new TextEncoder();
-        return function (str) { return te.encode(str); };
-    }
-    if (typeof Buffer !== 'undefined' && Buffer.from) {
-        return function (str) {
-            return Buffer.from(str, 'utf8');
-        };
-    }
-    throw new Error('No UTF-8 encoder available. Provide TextEncoder or Buffer.from');
-})();
+var encodeUtf8 = function (str) {
+    var te = new TextEncoder();
+    return te.encode(str);
+}
 
 function arrayBufferToBase64(buffer) {
     if (typeof Buffer !== 'undefined' && Buffer.from) {
