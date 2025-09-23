@@ -1,4 +1,4 @@
-# node-oauth1
+# @postman/node-oauth1
 
 This is an implementation of OAuth-1.0a signatures, originally by Netflix, Inc.
 
@@ -6,7 +6,7 @@ This is an implementation of OAuth-1.0a signatures, originally by Netflix, Inc.
 
 Install using
 ```
-$ npm install node-oauth1
+$ npm install @postman/node-oauth1
 ```
 
 # License
